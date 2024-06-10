@@ -29,10 +29,10 @@ module Lib (
 ) where
 
 import Control.Monad (join)
-import Data.Aeson (ToJSON, FromJSON, Value, toJSON)
-import Data.List.NonEmpty (singleton, NonEmpty, head)
-import Data.Text (Text, unpack )
-import Database.PostgreSQL.Simple (query, query_, Connection, Only(..), connectPostgreSQL)
+import Data.Aeson (FromJSON, ToJSON, Value, toJSON)
+import Data.List.NonEmpty (NonEmpty, head, singleton)
+import Data.Text (Text, unpack)
+import Database.PostgreSQL.Simple (Connection, Only (..), connectPostgreSQL, query, query_)
 import Database.PostgreSQL.Simple.FromField
 import GHC.Generics
 import GHC.Num.Integer (integerFromInt, integerToInt)

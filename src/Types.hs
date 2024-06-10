@@ -12,10 +12,7 @@ Portability: POSIX
 The types that are used in Lib are split out here, to make both files
 a bit less noisy and easier to work with.
 -}
-
-
-module Types
-    (
+module Types (
     CreateTodoRequest (..),
     CreateTodoResponse (..),
     FailedToCreateTodo (..),
@@ -82,17 +79,20 @@ data TodosStruct = TodosStruct
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON, FromRow, ToRow, FromField)
 
 {- | This struct is returned as a JSON object if we try to read,
-update, or delete a todo ID that cannot be found. -}
+update, or delete a todo ID that cannot be found.
+-}
 data TodoNotFound = TodoNotFound
-    { -- | The missing Todo ID
-      tnfTid :: Int
-    -- ^ The TID that we could not find in our data store.
+    { tnfTid :: Int
+    -- ^ The missing Todo ID
     }
+    -- \^ The TID that we could not find in our data store.
+
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 {- | We return this type if we run afoul of the invariant that each
 todo has a unique ID. This really only exists to handle a circumstance
-that the types allow, but @should@ be impossible. -}
+that the types allow, but @should@ be impossible.
+-}
 data MultipleTodosFound = MultipleTodosFound
     { mtfTid :: Int
     -- ^ The TID that somehow was found more than once.
@@ -102,7 +102,8 @@ data MultipleTodosFound = MultipleTodosFound
 {- | An update request. If a field is Nothing, then it will be
 unchanged in the request. Note that this allows for a "no-op" update,
 but having the types constrain that "at least one field shall be
-populated" would be ... tricky. -}
+populated" would be ... tricky.
+-}
 data UpdateTodoRequest = UpdateTodoRequest
     { utrTitle :: Maybe Text
     -- ^ A possible change to a title.
@@ -114,7 +115,8 @@ data UpdateTodoRequest = UpdateTodoRequest
     deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 {- | The response returned -- as a JSON object -- on successfully
-updating a todo entry.-}
+updating a todo entry.
+-}
 data UpdateTodoResponse = UpdateTodoResponse
     { utrTid :: Int
     -- ^ Update was successful, return TID update was performed on
@@ -123,7 +125,8 @@ data UpdateTodoResponse = UpdateTodoResponse
 
 {- | The response returned -- as a JSON object -- on successfully
 deleting a todo entry. Hopefully one we've finished, rather than
-abandoned.-}
+abandoned.
+-}
 data DeleteTodoResponse = DeleteTodoResponse
     { dtrTid :: Int
     -- ^ Update was successful, return TID update was performed on
