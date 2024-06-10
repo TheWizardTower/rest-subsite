@@ -45,4 +45,7 @@ be done to shore this up while keeping the "generated from source
 code" conveniences.
 
 An example of the build process is encoded in build.sh at the root of
-this repo.
+this repo. A helper script to run the server is in run.sh, also at the
+root of this repo. Note that this project talks to a live PostgreSQL
+database, and needs a connection string placed into the `DATABASE_URL`
+environment variable.

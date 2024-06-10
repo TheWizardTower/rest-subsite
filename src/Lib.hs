@@ -37,6 +37,7 @@ import Database.PostgreSQL.Simple.FromField
 import GHC.Generics
 import GHC.Num.Integer (integerFromInt, integerToInt)
 import System.Environment (lookupEnv)
+import System.Exit (ExitCode (..), exitWith)
 import Text.Read (readMaybe)
 import Yesod
 import Yesod.EmbeddedStatic
@@ -162,12 +163,12 @@ runServer :: IO ()
 runServer = do
     putStrLn "runServer"
     connStrM <- lookupEnv "DATABASE_URL"
-    let
-        connStr :: String
-        connStr =
-            case connStrM of
-                Nothing -> "postgres://postgres:example@localhost:5432/postgres"
-                Just str -> str
+    connStr :: String <-
+        case connStrM of
+            Nothing -> do
+                putStrLn "This program requires the DATABASE_URL environment variable to be set with a valid PostgreSQL connection string."
+                exitWith $ ExitFailure 127
+            Just str -> return str
     putStrLn "Connection string:"
     putStrLn connStr
     conn <- connectPostgreSQL "postgres://postgres:example@localhost:5432/postgres"
