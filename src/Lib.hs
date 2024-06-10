@@ -29,23 +29,25 @@ module Lib (
 ) where
 
 import Control.Monad (join)
-import Data.Aeson
-import Data.Text
-import Database.PostgreSQL.Simple
+import Data.Aeson (ToJSON, FromJSON, Value, toJSON)
+import Data.List.NonEmpty (singleton, NonEmpty, head)
+import Data.Text (Text, unpack )
+import Database.PostgreSQL.Simple (query, query_, Connection, Only(..), connectPostgreSQL)
 import Database.PostgreSQL.Simple.FromField
 import GHC.Generics
 import GHC.Num.Integer (integerFromInt, integerToInt)
-import System.Environment
+import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
 import Yesod
 import Yesod.EmbeddedStatic
+import Prelude hiding (head)
 
 import Types
 
 mkEmbeddedStatic True "myStatic" [embedDirAt "" "./docs"]
 
 data MyRest = MyRest
-    { connPool :: [Connection]
+    { connPool :: NonEmpty Connection
     -- ^ A pool of connections to the PostgreSQL database.
     , getStatic :: EmbeddedStatic
     -- ^ The static website in the website configuration. This is where
@@ -83,7 +85,7 @@ getHomeR = defaultLayout $ do
 postRestCreateR :: Handler Value
 postRestCreateR = do
     myVal :: CreateTodoRequest <- requireCheckJsonBody
-    conn <- Prelude.head <$> getsYesod connPool
+    conn <- head <$> getsYesod connPool
     res :: [Only Int] <-
         liftIO $
             query
@@ -97,7 +99,7 @@ postRestCreateR = do
 
 getReadAllTodosR :: Handler Value
 getReadAllTodosR = do
-    conn <- Prelude.head <$> getsYesod connPool
+    conn <- head <$> getsYesod connPool
     res :: [Only TodosStruct] <-
         liftIO $
             query_ conn "SELECT (title, description, completed, id) FROM todos"
@@ -110,7 +112,7 @@ getReadAllTodosR = do
 -}
 getTodoR :: Int -> Handler Value
 getTodoR tid = do
-    conn <- getsYesod $ Prelude.head . connPool
+    conn <- getsYesod $ head . connPool
     res :: [Only TodosStruct] <-
         liftIO $
             query
@@ -128,7 +130,7 @@ getTodoR tid = do
 putUpdateTodoR :: Int -> Handler Value
 putUpdateTodoR tid = do
     utr :: UpdateTodoRequest <- requireCheckJsonBody
-    conn <- Prelude.head <$> getsYesod connPool
+    conn <- head <$> getsYesod connPool
     res :: [Only Integer] <-
         liftIO $
             query
@@ -143,7 +145,7 @@ putUpdateTodoR tid = do
 
 deleteDelTodoR :: Int -> Handler Value
 deleteDelTodoR tid = do
-    conn <- Prelude.head <$> getsYesod connPool
+    conn <- head <$> getsYesod connPool
     res :: [Only Int] <-
         liftIO
             $ query
@@ -169,4 +171,4 @@ runServer = do
     putStrLn "Connection string:"
     putStrLn connStr
     conn <- connectPostgreSQL "postgres://postgres:example@localhost:5432/postgres"
-    warp 3000 MyRest{connPool = [conn], getStatic = myStatic}
+    warp 3000 MyRest{connPool = singleton conn, getStatic = myStatic}
