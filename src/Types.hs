@@ -1,19 +1,24 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Types (InvalidRequest (..), CreateTodoRequest (..), CreateTodoResponse (..), FailedToCreateTodo (..), TodosStruct (..), TodoNotFound (..), MultipleTodosFound (..), UpdateTodoRequest (..), UpdateTodoResponse (..), DeleteTodoResponse (..)) where
+module Types
+    (
+    CreateTodoRequest (..),
+    CreateTodoResponse (..),
+    FailedToCreateTodo (..),
+    TodosStruct (..),
+    TodoNotFound (..),
+    MultipleTodosFound (..),
+    UpdateTodoRequest (..),
+    UpdateTodoResponse (..),
+    DeleteTodoResponse (..),
+) where
 
 import Data.Aeson
 import Data.Text
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
 import GHC.Generics
-
-data InvalidRequest = InvalidRequest
-    { errMsg :: Text
-    -- ^ What you did wrong, in a string.
-    }
-    deriving (Eq, Ord, Show, Generic, ToJSON, FromJSON)
 
 {- | This is the internal representation of the components of the todo
  create request.
