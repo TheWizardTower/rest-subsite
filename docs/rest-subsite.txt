@@ -8,11 +8,9 @@
 @version 0.1.0.0
 
 
--- | This is an experimental playground for how to maintain documentation
---   for a REST endpoint and associated datatypes, and hosting the
---   associated documentation for both.
-module Lib
-runServer :: IO ()
+-- | The types that are used in Lib are split out here, to make both files
+--   a bit less noisy and easier to work with.
+module Types
 
 -- | This is the internal representation of the components of the todo
 --   create request.
@@ -62,6 +60,119 @@ TodosStruct :: Text -> Text -> Bool -> Int -> TodosStruct
 -- | What ID did the database assign to this task?
 [tsTid] :: TodosStruct -> Int
 
+-- | This struct is returned as a JSON object if we try to read, update, or
+--   delete a todo ID that cannot be found.
+data TodoNotFound
+TodoNotFound :: Int -> TodoNotFound
+
+-- | The missing Todo ID
+[tnfTid] :: TodoNotFound -> Int
+
+-- | We return this type if we run afoul of the invariant that each todo
+--   has a unique ID. This really only exists to handle a circumstance that
+--   the types allow, but <tt>should</tt> be impossible.
+data MultipleTodosFound
+MultipleTodosFound :: Int -> MultipleTodosFound
+
+-- | The TID that somehow was found more than once.
+[mtfTid] :: MultipleTodosFound -> Int
+
+-- | An update request. If a field is Nothing, then it will be unchanged in
+--   the request. Note that this allows for a "no-op" update, but having
+--   the types constrain that "at least one field shall be populated" would
+--   be ... tricky.
+data UpdateTodoRequest
+UpdateTodoRequest :: Maybe Text -> Maybe Text -> Maybe Bool -> UpdateTodoRequest
+
+-- | A possible change to a title.
+[utrTitle] :: UpdateTodoRequest -> Maybe Text
+
+-- | A possible change to the description.
+[utrDescription] :: UpdateTodoRequest -> Maybe Text
+
+-- | A possible change to the finished state.
+[utrFinished] :: UpdateTodoRequest -> Maybe Bool
+
+-- | The response returned -- as a JSON object -- on successfully updating
+--   a todo entry.
+data UpdateTodoResponse
+UpdateTodoResponse :: Int -> UpdateTodoResponse
+
+-- | Update was successful, return TID update was performed on
+[utrTid] :: UpdateTodoResponse -> Int
+
+-- | The response returned -- as a JSON object -- on successfully deleting
+--   a todo entry. Hopefully one we've finished, rather than abandoned.
+data DeleteTodoResponse
+DeleteTodoResponse :: Int -> DeleteTodoResponse
+
+-- | Update was successful, return TID update was performed on
+[dtrTid] :: DeleteTodoResponse -> Int
+instance Data.Aeson.Types.FromJSON.FromJSON Types.CreateTodoRequest
+instance Data.Aeson.Types.ToJSON.ToJSON Types.CreateTodoRequest
+instance GHC.Generics.Generic Types.CreateTodoRequest
+instance GHC.Show.Show Types.CreateTodoRequest
+instance GHC.Classes.Ord Types.CreateTodoRequest
+instance GHC.Classes.Eq Types.CreateTodoRequest
+instance Data.Aeson.Types.FromJSON.FromJSON Types.CreateTodoResponse
+instance Data.Aeson.Types.ToJSON.ToJSON Types.CreateTodoResponse
+instance GHC.Generics.Generic Types.CreateTodoResponse
+instance GHC.Show.Show Types.CreateTodoResponse
+instance GHC.Classes.Ord Types.CreateTodoResponse
+instance GHC.Classes.Eq Types.CreateTodoResponse
+instance Data.Aeson.Types.FromJSON.FromJSON Types.FailedToCreateTodo
+instance Data.Aeson.Types.ToJSON.ToJSON Types.FailedToCreateTodo
+instance GHC.Generics.Generic Types.FailedToCreateTodo
+instance GHC.Show.Show Types.FailedToCreateTodo
+instance GHC.Classes.Ord Types.FailedToCreateTodo
+instance GHC.Classes.Eq Types.FailedToCreateTodo
+instance Database.PostgreSQL.Simple.FromField.FromField Types.TodosStruct
+instance Database.PostgreSQL.Simple.ToRow.ToRow Types.TodosStruct
+instance Database.PostgreSQL.Simple.FromRow.FromRow Types.TodosStruct
+instance Data.Aeson.Types.FromJSON.FromJSON Types.TodosStruct
+instance Data.Aeson.Types.ToJSON.ToJSON Types.TodosStruct
+instance GHC.Generics.Generic Types.TodosStruct
+instance GHC.Show.Show Types.TodosStruct
+instance GHC.Classes.Ord Types.TodosStruct
+instance GHC.Classes.Eq Types.TodosStruct
+instance Data.Aeson.Types.FromJSON.FromJSON Types.TodoNotFound
+instance Data.Aeson.Types.ToJSON.ToJSON Types.TodoNotFound
+instance GHC.Generics.Generic Types.TodoNotFound
+instance GHC.Show.Show Types.TodoNotFound
+instance GHC.Classes.Ord Types.TodoNotFound
+instance GHC.Classes.Eq Types.TodoNotFound
+instance Data.Aeson.Types.FromJSON.FromJSON Types.MultipleTodosFound
+instance Data.Aeson.Types.ToJSON.ToJSON Types.MultipleTodosFound
+instance GHC.Generics.Generic Types.MultipleTodosFound
+instance GHC.Show.Show Types.MultipleTodosFound
+instance GHC.Classes.Ord Types.MultipleTodosFound
+instance GHC.Classes.Eq Types.MultipleTodosFound
+instance Data.Aeson.Types.FromJSON.FromJSON Types.UpdateTodoRequest
+instance Data.Aeson.Types.ToJSON.ToJSON Types.UpdateTodoRequest
+instance GHC.Generics.Generic Types.UpdateTodoRequest
+instance GHC.Show.Show Types.UpdateTodoRequest
+instance GHC.Classes.Ord Types.UpdateTodoRequest
+instance GHC.Classes.Eq Types.UpdateTodoRequest
+instance Data.Aeson.Types.FromJSON.FromJSON Types.UpdateTodoResponse
+instance Data.Aeson.Types.ToJSON.ToJSON Types.UpdateTodoResponse
+instance GHC.Generics.Generic Types.UpdateTodoResponse
+instance GHC.Show.Show Types.UpdateTodoResponse
+instance GHC.Classes.Ord Types.UpdateTodoResponse
+instance GHC.Classes.Eq Types.UpdateTodoResponse
+instance Data.Aeson.Types.FromJSON.FromJSON Types.DeleteTodoResponse
+instance Data.Aeson.Types.ToJSON.ToJSON Types.DeleteTodoResponse
+instance GHC.Generics.Generic Types.DeleteTodoResponse
+instance GHC.Show.Show Types.DeleteTodoResponse
+instance GHC.Classes.Ord Types.DeleteTodoResponse
+instance GHC.Classes.Eq Types.DeleteTodoResponse
+
+
+-- | This is an experimental playground for how to maintain documentation
+--   for a REST endpoint and associated datatypes, and hosting the
+--   associated documentation for both.
+module Lib
+runServer :: IO ()
+
 -- | The handler for the base route.
 getHomeR :: Handler Html
 getReadAllTodosR :: Handler Value
@@ -73,69 +184,6 @@ postRestCreateR :: Handler Value
 instance GHC.Read.Read (Yesod.Routes.Class.Route Lib.MyRest)
 instance GHC.Show.Show (Yesod.Routes.Class.Route Lib.MyRest)
 instance GHC.Classes.Eq (Yesod.Routes.Class.Route Lib.MyRest)
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.InvalidRequest
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.InvalidRequest
-instance GHC.Generics.Generic Lib.InvalidRequest
-instance GHC.Show.Show Lib.InvalidRequest
-instance GHC.Classes.Ord Lib.InvalidRequest
-instance GHC.Classes.Eq Lib.InvalidRequest
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.CreateTodoRequest
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.CreateTodoRequest
-instance GHC.Generics.Generic Lib.CreateTodoRequest
-instance GHC.Show.Show Lib.CreateTodoRequest
-instance GHC.Classes.Ord Lib.CreateTodoRequest
-instance GHC.Classes.Eq Lib.CreateTodoRequest
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.CreateTodoResponse
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.CreateTodoResponse
-instance GHC.Generics.Generic Lib.CreateTodoResponse
-instance GHC.Show.Show Lib.CreateTodoResponse
-instance GHC.Classes.Ord Lib.CreateTodoResponse
-instance GHC.Classes.Eq Lib.CreateTodoResponse
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.FailedToCreateTodo
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.FailedToCreateTodo
-instance GHC.Generics.Generic Lib.FailedToCreateTodo
-instance GHC.Show.Show Lib.FailedToCreateTodo
-instance GHC.Classes.Ord Lib.FailedToCreateTodo
-instance GHC.Classes.Eq Lib.FailedToCreateTodo
-instance Database.PostgreSQL.Simple.FromField.FromField Lib.TodosStruct
-instance Database.PostgreSQL.Simple.ToRow.ToRow Lib.TodosStruct
-instance Database.PostgreSQL.Simple.FromRow.FromRow Lib.TodosStruct
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.TodosStruct
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.TodosStruct
-instance GHC.Generics.Generic Lib.TodosStruct
-instance GHC.Show.Show Lib.TodosStruct
-instance GHC.Classes.Ord Lib.TodosStruct
-instance GHC.Classes.Eq Lib.TodosStruct
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.TodoNotFound
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.TodoNotFound
-instance GHC.Generics.Generic Lib.TodoNotFound
-instance GHC.Show.Show Lib.TodoNotFound
-instance GHC.Classes.Ord Lib.TodoNotFound
-instance GHC.Classes.Eq Lib.TodoNotFound
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.MultipleTodosFound
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.MultipleTodosFound
-instance GHC.Generics.Generic Lib.MultipleTodosFound
-instance GHC.Show.Show Lib.MultipleTodosFound
-instance GHC.Classes.Ord Lib.MultipleTodosFound
-instance GHC.Classes.Eq Lib.MultipleTodosFound
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.UpdateTodoRequest
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.UpdateTodoRequest
-instance GHC.Generics.Generic Lib.UpdateTodoRequest
-instance GHC.Show.Show Lib.UpdateTodoRequest
-instance GHC.Classes.Ord Lib.UpdateTodoRequest
-instance GHC.Classes.Eq Lib.UpdateTodoRequest
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.UpdateTodoResponse
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.UpdateTodoResponse
-instance GHC.Generics.Generic Lib.UpdateTodoResponse
-instance GHC.Show.Show Lib.UpdateTodoResponse
-instance GHC.Classes.Ord Lib.UpdateTodoResponse
-instance GHC.Classes.Eq Lib.UpdateTodoResponse
-instance Data.Aeson.Types.FromJSON.FromJSON Lib.DeleteTodoResponse
-instance Data.Aeson.Types.ToJSON.ToJSON Lib.DeleteTodoResponse
-instance GHC.Generics.Generic Lib.DeleteTodoResponse
-instance GHC.Show.Show Lib.DeleteTodoResponse
-instance GHC.Classes.Ord Lib.DeleteTodoResponse
-instance GHC.Classes.Eq Lib.DeleteTodoResponse
 instance Yesod.Routes.Class.ParseRoute Lib.MyRest
 instance Yesod.Routes.Class.RenderRoute Lib.MyRest
 instance Yesod.Routes.Class.RouteAttrs Lib.MyRest

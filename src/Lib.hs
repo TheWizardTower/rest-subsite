@@ -23,10 +23,6 @@ associated documentation for both.
 -}
 module Lib (
     runServer,
-    CreateTodoRequest (..),
-    CreateTodoResponse (..),
-    FailedToCreateTodo (..),
-    TodosStruct (..),
     getHomeR,
     getReadAllTodosR,
     postRestCreateR,
@@ -46,7 +42,7 @@ import Yesod.EmbeddedStatic
 
 import Types
 
-mkEmbeddedStatic False "myStatic" [embedDirAt "" "./docs"]
+mkEmbeddedStatic True "myStatic" [embedDirAt "" "./docs"]
 
 data MyRest = MyRest
     { connPool :: [Connection]

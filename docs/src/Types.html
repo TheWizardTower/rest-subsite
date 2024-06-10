@@ -1,0 +1,1115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="annot"><span class="hs-comment">{- |
+Module: Types and derivations for the example REST endpoint
+Copyright: (c) 2024 Adam McCullough
+License: GPL-3
+Maintainer: merlinfmct87@gmail.com
+Stability: experimental
+Portability: POSIX
+
+The types that are used in Lib are split out here, to make both files
+a bit less noisy and easier to work with.
+-}</span></span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Types</span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Types.html#CreateTodoRequest"><span class="hs-identifier">CreateTodoRequest</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Types.html#CreateTodoResponse"><span class="hs-identifier">CreateTodoResponse</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Types.html#FailedToCreateTodo"><span class="hs-identifier">FailedToCreateTodo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Types.html#TodosStruct"><span class="hs-identifier">TodosStruct</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Types.html#TodoNotFound"><span class="hs-identifier">TodoNotFound</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Types.html#MultipleTodosFound"><span class="hs-identifier">MultipleTodosFound</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Types.html#UpdateTodoRequest"><span class="hs-identifier">UpdateTodoRequest</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Types.html#UpdateTodoResponse"><span class="hs-identifier">UpdateTodoResponse</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Types.html#DeleteTodoResponse"><span class="hs-identifier">DeleteTodoResponse</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Aeson</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Database.PostgreSQL.Simple</span></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Database.PostgreSQL.Simple.FromField</span></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><span class="hs-comment">{- | This is the internal representation of the components of the todo
+ create request.
+-}</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">data</span><span> </span><span id="CreateTodoRequest"><span class="annot"><a href="Types.html#CreateTodoRequest"><span class="hs-identifier hs-var">CreateTodoRequest</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CreateTodoRequest"><span class="annot"><a href="Types.html#CreateTodoRequest"><span class="hs-identifier hs-var">CreateTodoRequest</span></a></span></span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="ctrTitle"><span class="annot"><span class="annottext">CreateTodoRequest -&gt; Text
+</span><a href="Types.html#ctrTitle"><span class="hs-identifier hs-var hs-var">ctrTitle</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Title of the todo. Quick, snappy description of the task.</span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="ctrDescription"><span class="annot"><span class="annottext">CreateTodoRequest -&gt; Text
+</span><a href="Types.html#ctrDescription"><span class="hs-identifier hs-var hs-var">ctrDescription</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ More in-depth description of the work to be done.</span></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679198614"><span id="local-6989586621679198619"><span class="annot"><span class="annottext">CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+(CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; Eq CreateTodoRequest
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+== :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+$c/= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+/= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198626"><span id="local-6989586621679198631"><span id="local-6989586621679198635"><span id="local-6989586621679198639"><span id="local-6989586621679198642"><span id="local-6989586621679198645"><span id="local-6989586621679198648"><span class="annot"><span class="annottext">Eq CreateTodoRequest
+Eq CreateTodoRequest =&gt;
+(CreateTodoRequest -&gt; CreateTodoRequest -&gt; Ordering)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest)
+-&gt; (CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest)
+-&gt; Ord CreateTodoRequest
+CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+CreateTodoRequest -&gt; CreateTodoRequest -&gt; Ordering
+CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Ordering
+compare :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Ordering
+$c&lt; :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+&lt; :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+$c&lt;= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+&lt;= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+$c&gt; :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+&gt; :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+$c&gt;= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+&gt;= :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; Bool
+$cmax :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest
+max :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest
+$cmin :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest
+min :: CreateTodoRequest -&gt; CreateTodoRequest -&gt; CreateTodoRequest
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198652"><span id="local-6989586621679198659"><span id="local-6989586621679198663"><span class="annot"><span class="annottext">Int -&gt; CreateTodoRequest -&gt; ShowS
+[CreateTodoRequest] -&gt; ShowS
+CreateTodoRequest -&gt; String
+(Int -&gt; CreateTodoRequest -&gt; ShowS)
+-&gt; (CreateTodoRequest -&gt; String)
+-&gt; ([CreateTodoRequest] -&gt; ShowS)
+-&gt; Show CreateTodoRequest
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CreateTodoRequest -&gt; ShowS
+showsPrec :: Int -&gt; CreateTodoRequest -&gt; ShowS
+$cshow :: CreateTodoRequest -&gt; String
+show :: CreateTodoRequest -&gt; String
+$cshowList :: [CreateTodoRequest] -&gt; ShowS
+showList :: [CreateTodoRequest] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198667"><span id="local-6989586621679198669"><span class="annot"><span class="annottext">(forall x. CreateTodoRequest -&gt; Rep CreateTodoRequest x)
+-&gt; (forall x. Rep CreateTodoRequest x -&gt; CreateTodoRequest)
+-&gt; Generic CreateTodoRequest
+forall x. Rep CreateTodoRequest x -&gt; CreateTodoRequest
+forall x. CreateTodoRequest -&gt; Rep CreateTodoRequest x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. CreateTodoRequest -&gt; Rep CreateTodoRequest x
+from :: forall x. CreateTodoRequest -&gt; Rep CreateTodoRequest x
+$cto :: forall x. Rep CreateTodoRequest x -&gt; CreateTodoRequest
+to :: forall x. Rep CreateTodoRequest x -&gt; CreateTodoRequest
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198673"><span id="local-6989586621679198680"><span id="local-6989586621679198683"><span id="local-6989586621679198686"><span class="annot"><span class="annottext">[CreateTodoRequest] -&gt; Value
+[CreateTodoRequest] -&gt; Encoding
+CreateTodoRequest -&gt; Value
+CreateTodoRequest -&gt; Encoding
+(CreateTodoRequest -&gt; Value)
+-&gt; (CreateTodoRequest -&gt; Encoding)
+-&gt; ([CreateTodoRequest] -&gt; Value)
+-&gt; ([CreateTodoRequest] -&gt; Encoding)
+-&gt; ToJSON CreateTodoRequest
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: CreateTodoRequest -&gt; Value
+toJSON :: CreateTodoRequest -&gt; Value
+$ctoEncoding :: CreateTodoRequest -&gt; Encoding
+toEncoding :: CreateTodoRequest -&gt; Encoding
+$ctoJSONList :: [CreateTodoRequest] -&gt; Value
+toJSONList :: [CreateTodoRequest] -&gt; Value
+$ctoEncodingList :: [CreateTodoRequest] -&gt; Encoding
+toEncodingList :: [CreateTodoRequest] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198782"><span id="local-6989586621679198789"><span class="annot"><span class="annottext">Value -&gt; Parser [CreateTodoRequest]
+Value -&gt; Parser CreateTodoRequest
+(Value -&gt; Parser CreateTodoRequest)
+-&gt; (Value -&gt; Parser [CreateTodoRequest])
+-&gt; FromJSON CreateTodoRequest
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser CreateTodoRequest
+parseJSON :: Value -&gt; Parser CreateTodoRequest
+$cparseJSONList :: Value -&gt; Parser [CreateTodoRequest]
+parseJSONList :: Value -&gt; Parser [CreateTodoRequest]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="annot"><span class="hs-comment">{- | Internal representation of the response of the create todo
+ request. If successful, this will return the todo ID for the user to
+ refer to when they want to refer to or update the todo later.
+-}</span></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">data</span><span> </span><span id="CreateTodoResponse"><span class="annot"><a href="Types.html#CreateTodoResponse"><span class="hs-identifier hs-var">CreateTodoResponse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CreateTodoResponse"><span class="annot"><a href="Types.html#CreateTodoResponse"><span class="hs-identifier hs-var">CreateTodoResponse</span></a></span></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="ctrTid"><span class="annot"><span class="annottext">CreateTodoResponse -&gt; Int
+</span><a href="Types.html#ctrTid"><span class="hs-identifier hs-var hs-var">ctrTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ ID of the todo that was created.</span></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679198860"><span id="local-6989586621679198864"><span class="annot"><span class="annottext">CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+(CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; Eq CreateTodoResponse
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+== :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+$c/= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+/= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198870"><span id="local-6989586621679198873"><span id="local-6989586621679198876"><span id="local-6989586621679198880"><span id="local-6989586621679198883"><span id="local-6989586621679198886"><span id="local-6989586621679198889"><span class="annot"><span class="annottext">Eq CreateTodoResponse
+Eq CreateTodoResponse =&gt;
+(CreateTodoResponse -&gt; CreateTodoResponse -&gt; Ordering)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse)
+-&gt; (CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse)
+-&gt; Ord CreateTodoResponse
+CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+CreateTodoResponse -&gt; CreateTodoResponse -&gt; Ordering
+CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Ordering
+compare :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Ordering
+$c&lt; :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+&lt; :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+$c&lt;= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+&lt;= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+$c&gt; :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+&gt; :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+$c&gt;= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+&gt;= :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; Bool
+$cmax :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse
+max :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse
+$cmin :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse
+min :: CreateTodoResponse -&gt; CreateTodoResponse -&gt; CreateTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198892"><span id="local-6989586621679198897"><span id="local-6989586621679198901"><span class="annot"><span class="annottext">Int -&gt; CreateTodoResponse -&gt; ShowS
+[CreateTodoResponse] -&gt; ShowS
+CreateTodoResponse -&gt; String
+(Int -&gt; CreateTodoResponse -&gt; ShowS)
+-&gt; (CreateTodoResponse -&gt; String)
+-&gt; ([CreateTodoResponse] -&gt; ShowS)
+-&gt; Show CreateTodoResponse
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CreateTodoResponse -&gt; ShowS
+showsPrec :: Int -&gt; CreateTodoResponse -&gt; ShowS
+$cshow :: CreateTodoResponse -&gt; String
+show :: CreateTodoResponse -&gt; String
+$cshowList :: [CreateTodoResponse] -&gt; ShowS
+showList :: [CreateTodoResponse] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198904"><span id="local-6989586621679198906"><span class="annot"><span class="annottext">(forall x. CreateTodoResponse -&gt; Rep CreateTodoResponse x)
+-&gt; (forall x. Rep CreateTodoResponse x -&gt; CreateTodoResponse)
+-&gt; Generic CreateTodoResponse
+forall x. Rep CreateTodoResponse x -&gt; CreateTodoResponse
+forall x. CreateTodoResponse -&gt; Rep CreateTodoResponse x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. CreateTodoResponse -&gt; Rep CreateTodoResponse x
+from :: forall x. CreateTodoResponse -&gt; Rep CreateTodoResponse x
+$cto :: forall x. Rep CreateTodoResponse x -&gt; CreateTodoResponse
+to :: forall x. Rep CreateTodoResponse x -&gt; CreateTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198909"><span id="local-6989586621679198916"><span id="local-6989586621679198919"><span id="local-6989586621679198922"><span class="annot"><span class="annottext">[CreateTodoResponse] -&gt; Value
+[CreateTodoResponse] -&gt; Encoding
+CreateTodoResponse -&gt; Value
+CreateTodoResponse -&gt; Encoding
+(CreateTodoResponse -&gt; Value)
+-&gt; (CreateTodoResponse -&gt; Encoding)
+-&gt; ([CreateTodoResponse] -&gt; Value)
+-&gt; ([CreateTodoResponse] -&gt; Encoding)
+-&gt; ToJSON CreateTodoResponse
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: CreateTodoResponse -&gt; Value
+toJSON :: CreateTodoResponse -&gt; Value
+$ctoEncoding :: CreateTodoResponse -&gt; Encoding
+toEncoding :: CreateTodoResponse -&gt; Encoding
+$ctoJSONList :: [CreateTodoResponse] -&gt; Value
+toJSONList :: [CreateTodoResponse] -&gt; Value
+$ctoEncodingList :: [CreateTodoResponse] -&gt; Encoding
+toEncodingList :: [CreateTodoResponse] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679198969"><span id="local-6989586621679198976"><span class="annot"><span class="annottext">Value -&gt; Parser [CreateTodoResponse]
+Value -&gt; Parser CreateTodoResponse
+(Value -&gt; Parser CreateTodoResponse)
+-&gt; (Value -&gt; Parser [CreateTodoResponse])
+-&gt; FromJSON CreateTodoResponse
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser CreateTodoResponse
+parseJSON :: Value -&gt; Parser CreateTodoResponse
+$cparseJSONList :: Value -&gt; Parser [CreateTodoResponse]
+parseJSONList :: Value -&gt; Parser [CreateTodoResponse]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">{- | If the create request fails, return the request that failed. Don't
+ expose the internal error, as that's a security vulnerability. But, we
+ should add some facility to communicate broadly what went wrong,
+ especially if the failure was due to invalid inputs.
+-}</span></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">data</span><span> </span><span id="FailedToCreateTodo"><span class="annot"><a href="Types.html#FailedToCreateTodo"><span class="hs-identifier hs-var">FailedToCreateTodo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="FailedToCreateTodo"><span class="annot"><a href="Types.html#FailedToCreateTodo"><span class="hs-identifier hs-var">FailedToCreateTodo</span></a></span></span><span>
+</span><span id="line-63"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="createReq"><span class="annot"><span class="annottext">FailedToCreateTodo -&gt; CreateTodoRequest
+</span><a href="Types.html#createReq"><span class="hs-identifier hs-var hs-var">createReq</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Types.html#CreateTodoRequest"><span class="hs-identifier hs-type">CreateTodoRequest</span></a></span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ The originating create request type.</span></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679199020"><span id="local-6989586621679199023"><span class="annot"><span class="annottext">FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+(FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; Eq FailedToCreateTodo
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+== :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+$c/= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+/= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199029"><span id="local-6989586621679199032"><span id="local-6989586621679199035"><span id="local-6989586621679199039"><span id="local-6989586621679199042"><span id="local-6989586621679199045"><span id="local-6989586621679199048"><span class="annot"><span class="annottext">Eq FailedToCreateTodo
+Eq FailedToCreateTodo =&gt;
+(FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Ordering)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo)
+-&gt; (FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo)
+-&gt; Ord FailedToCreateTodo
+FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Ordering
+FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Ordering
+compare :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Ordering
+$c&lt; :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+&lt; :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+$c&lt;= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+&lt;= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+$c&gt; :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+&gt; :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+$c&gt;= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+&gt;= :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; Bool
+$cmax :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo
+max :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo
+$cmin :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo
+min :: FailedToCreateTodo -&gt; FailedToCreateTodo -&gt; FailedToCreateTodo
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199051"><span id="local-6989586621679199055"><span id="local-6989586621679199059"><span class="annot"><span class="annottext">Int -&gt; FailedToCreateTodo -&gt; ShowS
+[FailedToCreateTodo] -&gt; ShowS
+FailedToCreateTodo -&gt; String
+(Int -&gt; FailedToCreateTodo -&gt; ShowS)
+-&gt; (FailedToCreateTodo -&gt; String)
+-&gt; ([FailedToCreateTodo] -&gt; ShowS)
+-&gt; Show FailedToCreateTodo
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; FailedToCreateTodo -&gt; ShowS
+showsPrec :: Int -&gt; FailedToCreateTodo -&gt; ShowS
+$cshow :: FailedToCreateTodo -&gt; String
+show :: FailedToCreateTodo -&gt; String
+$cshowList :: [FailedToCreateTodo] -&gt; ShowS
+showList :: [FailedToCreateTodo] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199062"><span id="local-6989586621679199064"><span class="annot"><span class="annottext">(forall x. FailedToCreateTodo -&gt; Rep FailedToCreateTodo x)
+-&gt; (forall x. Rep FailedToCreateTodo x -&gt; FailedToCreateTodo)
+-&gt; Generic FailedToCreateTodo
+forall x. Rep FailedToCreateTodo x -&gt; FailedToCreateTodo
+forall x. FailedToCreateTodo -&gt; Rep FailedToCreateTodo x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. FailedToCreateTodo -&gt; Rep FailedToCreateTodo x
+from :: forall x. FailedToCreateTodo -&gt; Rep FailedToCreateTodo x
+$cto :: forall x. Rep FailedToCreateTodo x -&gt; FailedToCreateTodo
+to :: forall x. Rep FailedToCreateTodo x -&gt; FailedToCreateTodo
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199067"><span id="local-6989586621679199074"><span id="local-6989586621679199077"><span id="local-6989586621679199080"><span class="annot"><span class="annottext">[FailedToCreateTodo] -&gt; Value
+[FailedToCreateTodo] -&gt; Encoding
+FailedToCreateTodo -&gt; Value
+FailedToCreateTodo -&gt; Encoding
+(FailedToCreateTodo -&gt; Value)
+-&gt; (FailedToCreateTodo -&gt; Encoding)
+-&gt; ([FailedToCreateTodo] -&gt; Value)
+-&gt; ([FailedToCreateTodo] -&gt; Encoding)
+-&gt; ToJSON FailedToCreateTodo
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: FailedToCreateTodo -&gt; Value
+toJSON :: FailedToCreateTodo -&gt; Value
+$ctoEncoding :: FailedToCreateTodo -&gt; Encoding
+toEncoding :: FailedToCreateTodo -&gt; Encoding
+$ctoJSONList :: [FailedToCreateTodo] -&gt; Value
+toJSONList :: [FailedToCreateTodo] -&gt; Value
+$ctoEncodingList :: [FailedToCreateTodo] -&gt; Encoding
+toEncodingList :: [FailedToCreateTodo] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199124"><span id="local-6989586621679199131"><span class="annot"><span class="annottext">Value -&gt; Parser [FailedToCreateTodo]
+Value -&gt; Parser FailedToCreateTodo
+(Value -&gt; Parser FailedToCreateTodo)
+-&gt; (Value -&gt; Parser [FailedToCreateTodo])
+-&gt; FromJSON FailedToCreateTodo
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser FailedToCreateTodo
+parseJSON :: Value -&gt; Parser FailedToCreateTodo
+$cparseJSONList :: Value -&gt; Parser [FailedToCreateTodo]
+parseJSONList :: Value -&gt; Parser [FailedToCreateTodo]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><span class="hs-comment">{- | This struct is used to represent the result of a read request. As
+such, it has the title, description, and completed fields you'd
+expect, as well as the todo ID.
+-}</span></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">data</span><span> </span><span id="TodosStruct"><span class="annot"><a href="Types.html#TodosStruct"><span class="hs-identifier hs-var">TodosStruct</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TodosStruct"><span class="annot"><a href="Types.html#TodosStruct"><span class="hs-identifier hs-var">TodosStruct</span></a></span></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="todoTitle"><span class="annot"><span class="annottext">TodosStruct -&gt; Text
+</span><a href="Types.html#todoTitle"><span class="hs-identifier hs-var hs-var">todoTitle</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Title of the todo. Quick, snappy description of the task.</span></span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="todoDescription"><span class="annot"><span class="annottext">TodosStruct -&gt; Text
+</span><a href="Types.html#todoDescription"><span class="hs-identifier hs-var hs-var">todoDescription</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ More in-depth description of the work to be done.</span></span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="todoCompleted"><span class="annot"><span class="annottext">TodosStruct -&gt; Bool
+</span><a href="Types.html#todoCompleted"><span class="hs-identifier hs-var hs-var">todoCompleted</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Has the task been completed? True for yes.</span></span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="tsTid"><span class="annot"><span class="annottext">TodosStruct -&gt; Int
+</span><a href="Types.html#tsTid"><span class="hs-identifier hs-var hs-var">tsTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ What ID did the database assign to this task?</span></span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679199176"><span id="local-6989586621679199183"><span class="annot"><span class="annottext">TodosStruct -&gt; TodosStruct -&gt; Bool
+(TodosStruct -&gt; TodosStruct -&gt; Bool)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; Bool) -&gt; Eq TodosStruct
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: TodosStruct -&gt; TodosStruct -&gt; Bool
+== :: TodosStruct -&gt; TodosStruct -&gt; Bool
+$c/= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+/= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199189"><span id="local-6989586621679199196"><span id="local-6989586621679199202"><span id="local-6989586621679199206"><span id="local-6989586621679199209"><span id="local-6989586621679199212"><span id="local-6989586621679199215"><span class="annot"><span class="annottext">Eq TodosStruct
+Eq TodosStruct =&gt;
+(TodosStruct -&gt; TodosStruct -&gt; Ordering)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; Bool)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; Bool)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; Bool)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; Bool)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; TodosStruct)
+-&gt; (TodosStruct -&gt; TodosStruct -&gt; TodosStruct)
+-&gt; Ord TodosStruct
+TodosStruct -&gt; TodosStruct -&gt; Bool
+TodosStruct -&gt; TodosStruct -&gt; Ordering
+TodosStruct -&gt; TodosStruct -&gt; TodosStruct
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: TodosStruct -&gt; TodosStruct -&gt; Ordering
+compare :: TodosStruct -&gt; TodosStruct -&gt; Ordering
+$c&lt; :: TodosStruct -&gt; TodosStruct -&gt; Bool
+&lt; :: TodosStruct -&gt; TodosStruct -&gt; Bool
+$c&lt;= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+&lt;= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+$c&gt; :: TodosStruct -&gt; TodosStruct -&gt; Bool
+&gt; :: TodosStruct -&gt; TodosStruct -&gt; Bool
+$c&gt;= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+&gt;= :: TodosStruct -&gt; TodosStruct -&gt; Bool
+$cmax :: TodosStruct -&gt; TodosStruct -&gt; TodosStruct
+max :: TodosStruct -&gt; TodosStruct -&gt; TodosStruct
+$cmin :: TodosStruct -&gt; TodosStruct -&gt; TodosStruct
+min :: TodosStruct -&gt; TodosStruct -&gt; TodosStruct
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199218"><span id="local-6989586621679199226"><span id="local-6989586621679199230"><span class="annot"><span class="annottext">Int -&gt; TodosStruct -&gt; ShowS
+[TodosStruct] -&gt; ShowS
+TodosStruct -&gt; String
+(Int -&gt; TodosStruct -&gt; ShowS)
+-&gt; (TodosStruct -&gt; String)
+-&gt; ([TodosStruct] -&gt; ShowS)
+-&gt; Show TodosStruct
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; TodosStruct -&gt; ShowS
+showsPrec :: Int -&gt; TodosStruct -&gt; ShowS
+$cshow :: TodosStruct -&gt; String
+show :: TodosStruct -&gt; String
+$cshowList :: [TodosStruct] -&gt; ShowS
+showList :: [TodosStruct] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199233"><span id="local-6989586621679199235"><span class="annot"><span class="annottext">(forall x. TodosStruct -&gt; Rep TodosStruct x)
+-&gt; (forall x. Rep TodosStruct x -&gt; TodosStruct)
+-&gt; Generic TodosStruct
+forall x. Rep TodosStruct x -&gt; TodosStruct
+forall x. TodosStruct -&gt; Rep TodosStruct x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. TodosStruct -&gt; Rep TodosStruct x
+from :: forall x. TodosStruct -&gt; Rep TodosStruct x
+$cto :: forall x. Rep TodosStruct x -&gt; TodosStruct
+to :: forall x. Rep TodosStruct x -&gt; TodosStruct
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199238"><span id="local-6989586621679199245"><span id="local-6989586621679199248"><span id="local-6989586621679199251"><span class="annot"><span class="annottext">[TodosStruct] -&gt; Value
+[TodosStruct] -&gt; Encoding
+TodosStruct -&gt; Value
+TodosStruct -&gt; Encoding
+(TodosStruct -&gt; Value)
+-&gt; (TodosStruct -&gt; Encoding)
+-&gt; ([TodosStruct] -&gt; Value)
+-&gt; ([TodosStruct] -&gt; Encoding)
+-&gt; ToJSON TodosStruct
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: TodosStruct -&gt; Value
+toJSON :: TodosStruct -&gt; Value
+$ctoEncoding :: TodosStruct -&gt; Encoding
+toEncoding :: TodosStruct -&gt; Encoding
+$ctoJSONList :: [TodosStruct] -&gt; Value
+toJSONList :: [TodosStruct] -&gt; Value
+$ctoEncodingList :: [TodosStruct] -&gt; Encoding
+toEncodingList :: [TodosStruct] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199346"><span id="local-6989586621679199353"><span class="annot"><span class="annottext">Value -&gt; Parser [TodosStruct]
+Value -&gt; Parser TodosStruct
+(Value -&gt; Parser TodosStruct)
+-&gt; (Value -&gt; Parser [TodosStruct]) -&gt; FromJSON TodosStruct
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser TodosStruct
+parseJSON :: Value -&gt; Parser TodosStruct
+$cparseJSONList :: Value -&gt; Parser [TodosStruct]
+parseJSONList :: Value -&gt; Parser [TodosStruct]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199425"><span class="annot"><span class="annottext">RowParser TodosStruct
+RowParser TodosStruct -&gt; FromRow TodosStruct
+forall a. RowParser a -&gt; FromRow a
+$cfromRow :: RowParser TodosStruct
+fromRow :: RowParser TodosStruct
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">FromRow</span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199453"><span class="annot"><span class="annottext">TodosStruct -&gt; [Action]
+(TodosStruct -&gt; [Action]) -&gt; ToRow TodosStruct
+forall a. (a -&gt; [Action]) -&gt; ToRow a
+$ctoRow :: TodosStruct -&gt; [Action]
+toRow :: TodosStruct -&gt; [Action]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">ToRow</span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Addr#
+Addr# -&gt; FieldParser TodosStruct
+FieldParser TodosStruct
+FieldParser TodosStruct -&gt; FromField TodosStruct
+forall a. FieldParser a -&gt; FromField a
+forall a. Addr# -&gt; a
+noMethodBindingError :: forall a. Addr# -&gt; a
+$cfromField :: FieldParser TodosStruct
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">FromField</span></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="annot"><span class="hs-comment">{- | This struct is returned as a JSON object if we try to read,
+update, or delete a todo ID that cannot be found. -}</span></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">data</span><span> </span><span id="TodoNotFound"><span class="annot"><a href="Types.html#TodoNotFound"><span class="hs-identifier hs-var">TodoNotFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TodoNotFound"><span class="annot"><a href="Types.html#TodoNotFound"><span class="hs-identifier hs-var">TodoNotFound</span></a></span></span><span>
+</span><span id="line-87"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="hs-comment">-- | The missing Todo ID</span></span><span>
+</span><span id="line-88"></span><span>      </span><span id="tnfTid"><span class="annot"><span class="annottext">TodoNotFound -&gt; Int
+</span><a href="Types.html#tnfTid"><span class="hs-identifier hs-var hs-var">tnfTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-comment">-- ^ The TID that we could not find in our data store.</span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-91"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679199486"><span id="local-6989586621679199489"><span class="annot"><span class="annottext">TodoNotFound -&gt; TodoNotFound -&gt; Bool
+(TodoNotFound -&gt; TodoNotFound -&gt; Bool)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; Bool) -&gt; Eq TodoNotFound
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+== :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+$c/= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+/= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199495"><span id="local-6989586621679199498"><span id="local-6989586621679199501"><span id="local-6989586621679199505"><span id="local-6989586621679199508"><span id="local-6989586621679199511"><span id="local-6989586621679199514"><span class="annot"><span class="annottext">Eq TodoNotFound
+Eq TodoNotFound =&gt;
+(TodoNotFound -&gt; TodoNotFound -&gt; Ordering)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; Bool)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; Bool)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; Bool)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; Bool)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound)
+-&gt; (TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound)
+-&gt; Ord TodoNotFound
+TodoNotFound -&gt; TodoNotFound -&gt; Bool
+TodoNotFound -&gt; TodoNotFound -&gt; Ordering
+TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: TodoNotFound -&gt; TodoNotFound -&gt; Ordering
+compare :: TodoNotFound -&gt; TodoNotFound -&gt; Ordering
+$c&lt; :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+&lt; :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+$c&lt;= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+&lt;= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+$c&gt; :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+&gt; :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+$c&gt;= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+&gt;= :: TodoNotFound -&gt; TodoNotFound -&gt; Bool
+$cmax :: TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound
+max :: TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound
+$cmin :: TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound
+min :: TodoNotFound -&gt; TodoNotFound -&gt; TodoNotFound
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199517"><span id="local-6989586621679199521"><span id="local-6989586621679199525"><span class="annot"><span class="annottext">Int -&gt; TodoNotFound -&gt; ShowS
+[TodoNotFound] -&gt; ShowS
+TodoNotFound -&gt; String
+(Int -&gt; TodoNotFound -&gt; ShowS)
+-&gt; (TodoNotFound -&gt; String)
+-&gt; ([TodoNotFound] -&gt; ShowS)
+-&gt; Show TodoNotFound
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; TodoNotFound -&gt; ShowS
+showsPrec :: Int -&gt; TodoNotFound -&gt; ShowS
+$cshow :: TodoNotFound -&gt; String
+show :: TodoNotFound -&gt; String
+$cshowList :: [TodoNotFound] -&gt; ShowS
+showList :: [TodoNotFound] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199528"><span id="local-6989586621679199530"><span class="annot"><span class="annottext">(forall x. TodoNotFound -&gt; Rep TodoNotFound x)
+-&gt; (forall x. Rep TodoNotFound x -&gt; TodoNotFound)
+-&gt; Generic TodoNotFound
+forall x. Rep TodoNotFound x -&gt; TodoNotFound
+forall x. TodoNotFound -&gt; Rep TodoNotFound x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. TodoNotFound -&gt; Rep TodoNotFound x
+from :: forall x. TodoNotFound -&gt; Rep TodoNotFound x
+$cto :: forall x. Rep TodoNotFound x -&gt; TodoNotFound
+to :: forall x. Rep TodoNotFound x -&gt; TodoNotFound
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199533"><span id="local-6989586621679199540"><span id="local-6989586621679199543"><span id="local-6989586621679199546"><span class="annot"><span class="annottext">[TodoNotFound] -&gt; Value
+[TodoNotFound] -&gt; Encoding
+TodoNotFound -&gt; Value
+TodoNotFound -&gt; Encoding
+(TodoNotFound -&gt; Value)
+-&gt; (TodoNotFound -&gt; Encoding)
+-&gt; ([TodoNotFound] -&gt; Value)
+-&gt; ([TodoNotFound] -&gt; Encoding)
+-&gt; ToJSON TodoNotFound
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: TodoNotFound -&gt; Value
+toJSON :: TodoNotFound -&gt; Value
+$ctoEncoding :: TodoNotFound -&gt; Encoding
+toEncoding :: TodoNotFound -&gt; Encoding
+$ctoJSONList :: [TodoNotFound] -&gt; Value
+toJSONList :: [TodoNotFound] -&gt; Value
+$ctoEncodingList :: [TodoNotFound] -&gt; Encoding
+toEncodingList :: [TodoNotFound] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199590"><span id="local-6989586621679199597"><span class="annot"><span class="annottext">Value -&gt; Parser [TodoNotFound]
+Value -&gt; Parser TodoNotFound
+(Value -&gt; Parser TodoNotFound)
+-&gt; (Value -&gt; Parser [TodoNotFound]) -&gt; FromJSON TodoNotFound
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser TodoNotFound
+parseJSON :: Value -&gt; Parser TodoNotFound
+$cparseJSONList :: Value -&gt; Parser [TodoNotFound]
+parseJSONList :: Value -&gt; Parser [TodoNotFound]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><span class="hs-comment">{- | We return this type if we run afoul of the invariant that each
+todo has a unique ID. This really only exists to handle a circumstance
+that the types allow, but @should@ be impossible. -}</span></span><span>
+</span><span id="line-96"></span><span class="hs-keyword">data</span><span> </span><span id="MultipleTodosFound"><span class="annot"><a href="Types.html#MultipleTodosFound"><span class="hs-identifier hs-var">MultipleTodosFound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MultipleTodosFound"><span class="annot"><a href="Types.html#MultipleTodosFound"><span class="hs-identifier hs-var">MultipleTodosFound</span></a></span></span><span>
+</span><span id="line-97"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="mtfTid"><span class="annot"><span class="annottext">MultipleTodosFound -&gt; Int
+</span><a href="Types.html#mtfTid"><span class="hs-identifier hs-var hs-var">mtfTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-98"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ The TID that somehow was found more than once.</span></span><span>
+</span><span id="line-99"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679199639"><span id="local-6989586621679199642"><span class="annot"><span class="annottext">MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+(MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; Eq MultipleTodosFound
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+== :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+$c/= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+/= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199648"><span id="local-6989586621679199651"><span id="local-6989586621679199654"><span id="local-6989586621679199658"><span id="local-6989586621679199661"><span id="local-6989586621679199664"><span id="local-6989586621679199667"><span class="annot"><span class="annottext">Eq MultipleTodosFound
+Eq MultipleTodosFound =&gt;
+(MultipleTodosFound -&gt; MultipleTodosFound -&gt; Ordering)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound)
+-&gt; (MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound)
+-&gt; Ord MultipleTodosFound
+MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+MultipleTodosFound -&gt; MultipleTodosFound -&gt; Ordering
+MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Ordering
+compare :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Ordering
+$c&lt; :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+&lt; :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+$c&lt;= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+&lt;= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+$c&gt; :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+&gt; :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+$c&gt;= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+&gt;= :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; Bool
+$cmax :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound
+max :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound
+$cmin :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound
+min :: MultipleTodosFound -&gt; MultipleTodosFound -&gt; MultipleTodosFound
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199670"><span id="local-6989586621679199674"><span id="local-6989586621679199678"><span class="annot"><span class="annottext">Int -&gt; MultipleTodosFound -&gt; ShowS
+[MultipleTodosFound] -&gt; ShowS
+MultipleTodosFound -&gt; String
+(Int -&gt; MultipleTodosFound -&gt; ShowS)
+-&gt; (MultipleTodosFound -&gt; String)
+-&gt; ([MultipleTodosFound] -&gt; ShowS)
+-&gt; Show MultipleTodosFound
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; MultipleTodosFound -&gt; ShowS
+showsPrec :: Int -&gt; MultipleTodosFound -&gt; ShowS
+$cshow :: MultipleTodosFound -&gt; String
+show :: MultipleTodosFound -&gt; String
+$cshowList :: [MultipleTodosFound] -&gt; ShowS
+showList :: [MultipleTodosFound] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199681"><span id="local-6989586621679199683"><span class="annot"><span class="annottext">(forall x. MultipleTodosFound -&gt; Rep MultipleTodosFound x)
+-&gt; (forall x. Rep MultipleTodosFound x -&gt; MultipleTodosFound)
+-&gt; Generic MultipleTodosFound
+forall x. Rep MultipleTodosFound x -&gt; MultipleTodosFound
+forall x. MultipleTodosFound -&gt; Rep MultipleTodosFound x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. MultipleTodosFound -&gt; Rep MultipleTodosFound x
+from :: forall x. MultipleTodosFound -&gt; Rep MultipleTodosFound x
+$cto :: forall x. Rep MultipleTodosFound x -&gt; MultipleTodosFound
+to :: forall x. Rep MultipleTodosFound x -&gt; MultipleTodosFound
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199686"><span id="local-6989586621679199693"><span id="local-6989586621679199696"><span id="local-6989586621679199699"><span class="annot"><span class="annottext">[MultipleTodosFound] -&gt; Value
+[MultipleTodosFound] -&gt; Encoding
+MultipleTodosFound -&gt; Value
+MultipleTodosFound -&gt; Encoding
+(MultipleTodosFound -&gt; Value)
+-&gt; (MultipleTodosFound -&gt; Encoding)
+-&gt; ([MultipleTodosFound] -&gt; Value)
+-&gt; ([MultipleTodosFound] -&gt; Encoding)
+-&gt; ToJSON MultipleTodosFound
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: MultipleTodosFound -&gt; Value
+toJSON :: MultipleTodosFound -&gt; Value
+$ctoEncoding :: MultipleTodosFound -&gt; Encoding
+toEncoding :: MultipleTodosFound -&gt; Encoding
+$ctoJSONList :: [MultipleTodosFound] -&gt; Value
+toJSONList :: [MultipleTodosFound] -&gt; Value
+$ctoEncodingList :: [MultipleTodosFound] -&gt; Encoding
+toEncodingList :: [MultipleTodosFound] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199743"><span id="local-6989586621679199750"><span class="annot"><span class="annottext">Value -&gt; Parser [MultipleTodosFound]
+Value -&gt; Parser MultipleTodosFound
+(Value -&gt; Parser MultipleTodosFound)
+-&gt; (Value -&gt; Parser [MultipleTodosFound])
+-&gt; FromJSON MultipleTodosFound
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser MultipleTodosFound
+parseJSON :: Value -&gt; Parser MultipleTodosFound
+$cparseJSONList :: Value -&gt; Parser [MultipleTodosFound]
+parseJSONList :: Value -&gt; Parser [MultipleTodosFound]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="annot"><span class="hs-comment">{- | An update request. If a field is Nothing, then it will be
+unchanged in the request. Note that this allows for a &quot;no-op&quot; update,
+but having the types constrain that &quot;at least one field shall be
+populated&quot; would be ... tricky. -}</span></span><span>
+</span><span id="line-106"></span><span class="hs-keyword">data</span><span> </span><span id="UpdateTodoRequest"><span class="annot"><a href="Types.html#UpdateTodoRequest"><span class="hs-identifier hs-var">UpdateTodoRequest</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="UpdateTodoRequest"><span class="annot"><a href="Types.html#UpdateTodoRequest"><span class="hs-identifier hs-var">UpdateTodoRequest</span></a></span></span><span>
+</span><span id="line-107"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="utrTitle"><span class="annot"><span class="annottext">UpdateTodoRequest -&gt; Maybe Text
+</span><a href="Types.html#utrTitle"><span class="hs-identifier hs-var hs-var">utrTitle</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-108"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ A possible change to a title.</span></span><span>
+</span><span id="line-109"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="utrDescription"><span class="annot"><span class="annottext">UpdateTodoRequest -&gt; Maybe Text
+</span><a href="Types.html#utrDescription"><span class="hs-identifier hs-var hs-var">utrDescription</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-110"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ A possible change to the description.</span></span><span>
+</span><span id="line-111"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="utrFinished"><span class="annot"><span class="annottext">UpdateTodoRequest -&gt; Maybe Bool
+</span><a href="Types.html#utrFinished"><span class="hs-identifier hs-var hs-var">utrFinished</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ A possible change to the finished state.</span></span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-114"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679199794"><span id="local-6989586621679199802"><span class="annot"><span class="annottext">UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+(UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; Eq UpdateTodoRequest
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+== :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+$c/= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+/= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199808"><span id="local-6989586621679199816"><span id="local-6989586621679199823"><span id="local-6989586621679199827"><span id="local-6989586621679199830"><span id="local-6989586621679199833"><span id="local-6989586621679199836"><span class="annot"><span class="annottext">Eq UpdateTodoRequest
+Eq UpdateTodoRequest =&gt;
+(UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Ordering)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest)
+-&gt; (UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest)
+-&gt; Ord UpdateTodoRequest
+UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Ordering
+UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Ordering
+compare :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Ordering
+$c&lt; :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+&lt; :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+$c&lt;= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+&lt;= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+$c&gt; :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+&gt; :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+$c&gt;= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+&gt;= :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; Bool
+$cmax :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest
+max :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest
+$cmin :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest
+min :: UpdateTodoRequest -&gt; UpdateTodoRequest -&gt; UpdateTodoRequest
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199839"><span id="local-6989586621679199848"><span id="local-6989586621679199852"><span class="annot"><span class="annottext">Int -&gt; UpdateTodoRequest -&gt; ShowS
+[UpdateTodoRequest] -&gt; ShowS
+UpdateTodoRequest -&gt; String
+(Int -&gt; UpdateTodoRequest -&gt; ShowS)
+-&gt; (UpdateTodoRequest -&gt; String)
+-&gt; ([UpdateTodoRequest] -&gt; ShowS)
+-&gt; Show UpdateTodoRequest
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; UpdateTodoRequest -&gt; ShowS
+showsPrec :: Int -&gt; UpdateTodoRequest -&gt; ShowS
+$cshow :: UpdateTodoRequest -&gt; String
+show :: UpdateTodoRequest -&gt; String
+$cshowList :: [UpdateTodoRequest] -&gt; ShowS
+showList :: [UpdateTodoRequest] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199855"><span id="local-6989586621679199857"><span class="annot"><span class="annottext">(forall x. UpdateTodoRequest -&gt; Rep UpdateTodoRequest x)
+-&gt; (forall x. Rep UpdateTodoRequest x -&gt; UpdateTodoRequest)
+-&gt; Generic UpdateTodoRequest
+forall x. Rep UpdateTodoRequest x -&gt; UpdateTodoRequest
+forall x. UpdateTodoRequest -&gt; Rep UpdateTodoRequest x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. UpdateTodoRequest -&gt; Rep UpdateTodoRequest x
+from :: forall x. UpdateTodoRequest -&gt; Rep UpdateTodoRequest x
+$cto :: forall x. Rep UpdateTodoRequest x -&gt; UpdateTodoRequest
+to :: forall x. Rep UpdateTodoRequest x -&gt; UpdateTodoRequest
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199860"><span id="local-6989586621679199867"><span id="local-6989586621679199870"><span id="local-6989586621679199873"><span class="annot"><span class="annottext">[UpdateTodoRequest] -&gt; Value
+[UpdateTodoRequest] -&gt; Encoding
+UpdateTodoRequest -&gt; Value
+UpdateTodoRequest -&gt; Encoding
+(UpdateTodoRequest -&gt; Value)
+-&gt; (UpdateTodoRequest -&gt; Encoding)
+-&gt; ([UpdateTodoRequest] -&gt; Value)
+-&gt; ([UpdateTodoRequest] -&gt; Encoding)
+-&gt; ToJSON UpdateTodoRequest
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: UpdateTodoRequest -&gt; Value
+toJSON :: UpdateTodoRequest -&gt; Value
+$ctoEncoding :: UpdateTodoRequest -&gt; Encoding
+toEncoding :: UpdateTodoRequest -&gt; Encoding
+$ctoJSONList :: [UpdateTodoRequest] -&gt; Value
+toJSONList :: [UpdateTodoRequest] -&gt; Value
+$ctoEncodingList :: [UpdateTodoRequest] -&gt; Encoding
+toEncodingList :: [UpdateTodoRequest] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679199952"><span id="local-6989586621679199959"><span class="annot"><span class="annottext">Value -&gt; Parser [UpdateTodoRequest]
+Value -&gt; Parser UpdateTodoRequest
+(Value -&gt; Parser UpdateTodoRequest)
+-&gt; (Value -&gt; Parser [UpdateTodoRequest])
+-&gt; FromJSON UpdateTodoRequest
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser UpdateTodoRequest
+parseJSON :: Value -&gt; Parser UpdateTodoRequest
+$cparseJSONList :: Value -&gt; Parser [UpdateTodoRequest]
+parseJSONList :: Value -&gt; Parser [UpdateTodoRequest]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="annot"><span class="hs-comment">{- | The response returned -- as a JSON object -- on successfully
+updating a todo entry.-}</span></span><span>
+</span><span id="line-118"></span><span class="hs-keyword">data</span><span> </span><span id="UpdateTodoResponse"><span class="annot"><a href="Types.html#UpdateTodoResponse"><span class="hs-identifier hs-var">UpdateTodoResponse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="UpdateTodoResponse"><span class="annot"><a href="Types.html#UpdateTodoResponse"><span class="hs-identifier hs-var">UpdateTodoResponse</span></a></span></span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="utrTid"><span class="annot"><span class="annottext">UpdateTodoResponse -&gt; Int
+</span><a href="Types.html#utrTid"><span class="hs-identifier hs-var hs-var">utrTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Update was successful, return TID update was performed on</span></span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679200019"><span id="local-6989586621679200022"><span class="annot"><span class="annottext">UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+(UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; Eq UpdateTodoResponse
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+== :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+$c/= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+/= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200028"><span id="local-6989586621679200031"><span id="local-6989586621679200034"><span id="local-6989586621679200038"><span id="local-6989586621679200041"><span id="local-6989586621679200044"><span id="local-6989586621679200047"><span class="annot"><span class="annottext">Eq UpdateTodoResponse
+Eq UpdateTodoResponse =&gt;
+(UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Ordering)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse)
+-&gt; (UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse)
+-&gt; Ord UpdateTodoResponse
+UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Ordering
+UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Ordering
+compare :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Ordering
+$c&lt; :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+&lt; :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+$c&lt;= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+&lt;= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+$c&gt; :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+&gt; :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+$c&gt;= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+&gt;= :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; Bool
+$cmax :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse
+max :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse
+$cmin :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse
+min :: UpdateTodoResponse -&gt; UpdateTodoResponse -&gt; UpdateTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200050"><span id="local-6989586621679200054"><span id="local-6989586621679200058"><span class="annot"><span class="annottext">Int -&gt; UpdateTodoResponse -&gt; ShowS
+[UpdateTodoResponse] -&gt; ShowS
+UpdateTodoResponse -&gt; String
+(Int -&gt; UpdateTodoResponse -&gt; ShowS)
+-&gt; (UpdateTodoResponse -&gt; String)
+-&gt; ([UpdateTodoResponse] -&gt; ShowS)
+-&gt; Show UpdateTodoResponse
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; UpdateTodoResponse -&gt; ShowS
+showsPrec :: Int -&gt; UpdateTodoResponse -&gt; ShowS
+$cshow :: UpdateTodoResponse -&gt; String
+show :: UpdateTodoResponse -&gt; String
+$cshowList :: [UpdateTodoResponse] -&gt; ShowS
+showList :: [UpdateTodoResponse] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200061"><span id="local-6989586621679200063"><span class="annot"><span class="annottext">(forall x. UpdateTodoResponse -&gt; Rep UpdateTodoResponse x)
+-&gt; (forall x. Rep UpdateTodoResponse x -&gt; UpdateTodoResponse)
+-&gt; Generic UpdateTodoResponse
+forall x. Rep UpdateTodoResponse x -&gt; UpdateTodoResponse
+forall x. UpdateTodoResponse -&gt; Rep UpdateTodoResponse x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. UpdateTodoResponse -&gt; Rep UpdateTodoResponse x
+from :: forall x. UpdateTodoResponse -&gt; Rep UpdateTodoResponse x
+$cto :: forall x. Rep UpdateTodoResponse x -&gt; UpdateTodoResponse
+to :: forall x. Rep UpdateTodoResponse x -&gt; UpdateTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200066"><span id="local-6989586621679200073"><span id="local-6989586621679200076"><span id="local-6989586621679200079"><span class="annot"><span class="annottext">[UpdateTodoResponse] -&gt; Value
+[UpdateTodoResponse] -&gt; Encoding
+UpdateTodoResponse -&gt; Value
+UpdateTodoResponse -&gt; Encoding
+(UpdateTodoResponse -&gt; Value)
+-&gt; (UpdateTodoResponse -&gt; Encoding)
+-&gt; ([UpdateTodoResponse] -&gt; Value)
+-&gt; ([UpdateTodoResponse] -&gt; Encoding)
+-&gt; ToJSON UpdateTodoResponse
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: UpdateTodoResponse -&gt; Value
+toJSON :: UpdateTodoResponse -&gt; Value
+$ctoEncoding :: UpdateTodoResponse -&gt; Encoding
+toEncoding :: UpdateTodoResponse -&gt; Encoding
+$ctoJSONList :: [UpdateTodoResponse] -&gt; Value
+toJSONList :: [UpdateTodoResponse] -&gt; Value
+$ctoEncodingList :: [UpdateTodoResponse] -&gt; Encoding
+toEncodingList :: [UpdateTodoResponse] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200123"><span id="local-6989586621679200130"><span class="annot"><span class="annottext">Value -&gt; Parser [UpdateTodoResponse]
+Value -&gt; Parser UpdateTodoResponse
+(Value -&gt; Parser UpdateTodoResponse)
+-&gt; (Value -&gt; Parser [UpdateTodoResponse])
+-&gt; FromJSON UpdateTodoResponse
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser UpdateTodoResponse
+parseJSON :: Value -&gt; Parser UpdateTodoResponse
+$cparseJSONList :: Value -&gt; Parser [UpdateTodoResponse]
+parseJSONList :: Value -&gt; Parser [UpdateTodoResponse]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span class="annot"><span class="hs-comment">{- | The response returned -- as a JSON object -- on successfully
+deleting a todo entry. Hopefully one we've finished, rather than
+abandoned.-}</span></span><span>
+</span><span id="line-127"></span><span class="hs-keyword">data</span><span> </span><span id="DeleteTodoResponse"><span class="annot"><a href="Types.html#DeleteTodoResponse"><span class="hs-identifier hs-var">DeleteTodoResponse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DeleteTodoResponse"><span class="annot"><a href="Types.html#DeleteTodoResponse"><span class="hs-identifier hs-var">DeleteTodoResponse</span></a></span></span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="dtrTid"><span class="annot"><span class="annottext">DeleteTodoResponse -&gt; Int
+</span><a href="Types.html#dtrTid"><span class="hs-identifier hs-var hs-var">dtrTid</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-129"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Update was successful, return TID update was performed on</span></span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679200172"><span id="local-6989586621679200175"><span class="annot"><span class="annottext">DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+(DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; Eq DeleteTodoResponse
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+== :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+$c/= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+/= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200181"><span id="local-6989586621679200184"><span id="local-6989586621679200187"><span id="local-6989586621679200191"><span id="local-6989586621679200194"><span id="local-6989586621679200197"><span id="local-6989586621679200200"><span class="annot"><span class="annottext">Eq DeleteTodoResponse
+Eq DeleteTodoResponse =&gt;
+(DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Ordering)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse)
+-&gt; (DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse)
+-&gt; Ord DeleteTodoResponse
+DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Ordering
+DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Ordering
+compare :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Ordering
+$c&lt; :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+&lt; :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+$c&lt;= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+&lt;= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+$c&gt; :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+&gt; :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+$c&gt;= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+&gt;= :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; Bool
+$cmax :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse
+max :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse
+$cmin :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse
+min :: DeleteTodoResponse -&gt; DeleteTodoResponse -&gt; DeleteTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200203"><span id="local-6989586621679200207"><span id="local-6989586621679200211"><span class="annot"><span class="annottext">Int -&gt; DeleteTodoResponse -&gt; ShowS
+[DeleteTodoResponse] -&gt; ShowS
+DeleteTodoResponse -&gt; String
+(Int -&gt; DeleteTodoResponse -&gt; ShowS)
+-&gt; (DeleteTodoResponse -&gt; String)
+-&gt; ([DeleteTodoResponse] -&gt; ShowS)
+-&gt; Show DeleteTodoResponse
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; DeleteTodoResponse -&gt; ShowS
+showsPrec :: Int -&gt; DeleteTodoResponse -&gt; ShowS
+$cshow :: DeleteTodoResponse -&gt; String
+show :: DeleteTodoResponse -&gt; String
+$cshowList :: [DeleteTodoResponse] -&gt; ShowS
+showList :: [DeleteTodoResponse] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200214"><span id="local-6989586621679200216"><span class="annot"><span class="annottext">(forall x. DeleteTodoResponse -&gt; Rep DeleteTodoResponse x)
+-&gt; (forall x. Rep DeleteTodoResponse x -&gt; DeleteTodoResponse)
+-&gt; Generic DeleteTodoResponse
+forall x. Rep DeleteTodoResponse x -&gt; DeleteTodoResponse
+forall x. DeleteTodoResponse -&gt; Rep DeleteTodoResponse x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. DeleteTodoResponse -&gt; Rep DeleteTodoResponse x
+from :: forall x. DeleteTodoResponse -&gt; Rep DeleteTodoResponse x
+$cto :: forall x. Rep DeleteTodoResponse x -&gt; DeleteTodoResponse
+to :: forall x. Rep DeleteTodoResponse x -&gt; DeleteTodoResponse
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200219"><span id="local-6989586621679200226"><span id="local-6989586621679200229"><span id="local-6989586621679200232"><span class="annot"><span class="annottext">[DeleteTodoResponse] -&gt; Value
+[DeleteTodoResponse] -&gt; Encoding
+DeleteTodoResponse -&gt; Value
+DeleteTodoResponse -&gt; Encoding
+(DeleteTodoResponse -&gt; Value)
+-&gt; (DeleteTodoResponse -&gt; Encoding)
+-&gt; ([DeleteTodoResponse] -&gt; Value)
+-&gt; ([DeleteTodoResponse] -&gt; Encoding)
+-&gt; ToJSON DeleteTodoResponse
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+$ctoJSON :: DeleteTodoResponse -&gt; Value
+toJSON :: DeleteTodoResponse -&gt; Value
+$ctoEncoding :: DeleteTodoResponse -&gt; Encoding
+toEncoding :: DeleteTodoResponse -&gt; Encoding
+$ctoJSONList :: [DeleteTodoResponse] -&gt; Value
+toJSONList :: [DeleteTodoResponse] -&gt; Value
+$ctoEncodingList :: [DeleteTodoResponse] -&gt; Encoding
+toEncodingList :: [DeleteTodoResponse] -&gt; Encoding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">ToJSON</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679200276"><span id="local-6989586621679200283"><span class="annot"><span class="annottext">Value -&gt; Parser [DeleteTodoResponse]
+Value -&gt; Parser DeleteTodoResponse
+(Value -&gt; Parser DeleteTodoResponse)
+-&gt; (Value -&gt; Parser [DeleteTodoResponse])
+-&gt; FromJSON DeleteTodoResponse
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+$cparseJSON :: Value -&gt; Parser DeleteTodoResponse
+parseJSON :: Value -&gt; Parser DeleteTodoResponse
+$cparseJSONList :: Value -&gt; Parser [DeleteTodoResponse]
+parseJSONList :: Value -&gt; Parser [DeleteTodoResponse]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">FromJSON</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span></pre></body></html>
