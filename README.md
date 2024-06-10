@@ -43,3 +43,6 @@ something that has a very slick UI, this will feel like a substantive
 downgrade. But, I'm not a frontend dev, it's possible more work could
 be done to shore this up while keeping the "generated from source
 code" conveniences.
+
+An example of the build process is encoded in build.sh at the root of
+this repo.
