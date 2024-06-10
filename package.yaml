@@ -1,0 +1,68 @@
+name:                rest-subsite
+version:             0.1.0.0
+github:              "githubuser/rest-subsite"
+license:             BSD-3-Clause
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2024 Author name here"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/rest-subsite#readme>
+
+dependencies:
+- aeson
+- base >= 4.7 && < 5
+- ghc-bignum
+- postgresql-simple
+- template-haskell
+- text
+- yesod
+- yesod-static
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -ddump-splices
+- -ddump-to-file
+
+library:
+  source-dirs: src
+
+executables:
+  rest-subsite-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - rest-subsite
+
+tests:
+  rest-subsite-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - rest-subsite
