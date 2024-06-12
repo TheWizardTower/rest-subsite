@@ -95,7 +95,7 @@ data TodosStruct = TodosStruct
     , todoId :: Int
     -- ^ What ID did the database assign to this task?
     }
-    deriving (Eq, Ord, Show, Generic, FromRow, ToRow)
+    deriving (Eq, Ord, Show)
 
 instance FromJSON TodosStruct where
     parseJSON (Object v) = TodosStruct <$> v .: "title" <*> v .: "description" <*> v .: "done" <*> v .: "tid"
