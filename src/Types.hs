@@ -90,22 +90,18 @@ data TodosStruct = TodosStruct
     -- ^ Title of the todo. Quick, snappy description of the task.
     , todoDescription :: Text
     -- ^ More in-depth description of the work to be done.
-    , todoCompleted :: Bool
+    , todoDone :: Bool
     -- ^ Has the task been completed? True for yes.
     , todoId :: Int
     -- ^ What ID did the database assign to this task?
     }
-    deriving (Eq, Ord, Show, Generic, FromRow, ToRow, FromField)
+    deriving (Eq, Ord, Show, Generic, FromRow, ToRow)
 
 instance FromJSON TodosStruct where
-    parseJSON (Object v) = TodosStruct <$> v .: "title" <*> v .: "description" <*> v .: "completed" <*> v .: "tid"
+    parseJSON (Object v) = TodosStruct <$> v .: "title" <*> v .: "description" <*> v .: "done" <*> v .: "tid"
 
 instance ToJSON TodosStruct where
-    toJSON (TodosStruct tTitle tDescription tCompleted tId) = object ["title" .= tTitle, "description" .= tDescription, "completed" .= tCompleted, "tid" .= tId]
-
--- instance FromField for TodosStruct where
---   fromField =
---     TodosStruct <$> field <*> field <*> field <*> field
+    toJSON (TodosStruct tTitle tDescription tDone tId) = object ["title" .= tTitle, "description" .= tDescription, "done" .= tDone, "tid" .= tId]
 
 {- | This struct is returned as a JSON object if we try to read,
 update, or delete a todo ID that cannot be found.

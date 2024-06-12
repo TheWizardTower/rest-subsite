@@ -101,10 +101,11 @@ postRestCreateR = do
 getReadAllTodosR :: Handler Value
 getReadAllTodosR = do
     conn <- head <$> getsYesod connPool
-    res :: [Only TodosStruct] <-
+    res :: [(Text, Text, Bool, Int)] <-
         liftIO $
-            query_ conn "SELECT (title, description, done, id) FROM todos"
-    return $ toJSON $ fmap (toJSON . fromOnly) res
+            query_ conn "SELECT title, description, done, id FROM todos"
+    let resTodos = fmap (\(title, des, done, tid) -> TodosStruct {todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    return $ toJSON resTodos
 
 {- | Run the server we've described above. This is called from main.
  The function pulls an environment variable to get the database
@@ -114,15 +115,16 @@ getReadAllTodosR = do
 getTodoR :: Int -> Handler Value
 getTodoR tid = do
     conn <- getsYesod $ head . connPool
-    res :: [Only TodosStruct] <-
+    res :: [(Text, Text, Bool, Int)] <-
         liftIO $
             query
                 conn
-                "SELECT (title, description, completed, id) FROM todos WHERE id = ?"
+                "SELECT title, description, done, id FROM todos WHERE id = ?"
                 (Only tid)
-    return $ case res of
+    let resTodo = fmap (\(title, des, done, tid) -> TodosStruct {todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    return $ case resTodo of
         [] -> toJSON TodoNotFound{tnfTid = tid}
-        [tds] -> toJSON $ fromOnly tds
+        [tds] -> toJSON tds
         -- We somehow found multiple matching todos, which should be
         -- impossible in our schema? Abort because reality has
         -- broken and cthulhu is talking to us through our DB.
