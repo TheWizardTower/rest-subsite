@@ -103,7 +103,7 @@ getReadAllTodosR = do
     conn <- head <$> getsYesod connPool
     res :: [Only TodosStruct] <-
         liftIO $
-            query_ conn "SELECT (title, description, completed, id) FROM todos"
+            query_ conn "SELECT (title, description, done, id) FROM todos"
     return $ toJSON $ fmap (toJSON . fromOnly) res
 
 {- | Run the server we've described above. This is called from main.
