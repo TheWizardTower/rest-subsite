@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -40,7 +38,7 @@ data CreateTodoRequest = CreateTodoRequest
     , ctrDescription :: Text
     -- ^ More in-depth description of the work to be done.
     }
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, Ord, Show)
 
 instance FromJSON CreateTodoRequest where
     parseJSON (Object v) = CreateTodoRequest <$> v .: "title" <*> v .: "description"
