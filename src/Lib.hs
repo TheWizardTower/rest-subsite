@@ -101,12 +101,12 @@ postRestCreateR = do
 
 resToTodo :: (Text, Text, Bool, Int) -> TodosStruct
 resToTodo (title, des, done, tid) =
-  TodosStruct
-  { todoTitle = title
-  , todoDescription = des
-  , todoDone = done
-  , todoId = tid
-  }
+    TodosStruct
+        { todoTitle = title
+        , todoDescription = des
+        , todoDone = done
+        , todoId = tid
+        }
 
 resListToTodo :: [(Text, Text, Bool, Int)] -> [TodosStruct]
 resListToTodo lst = fmap resToTodo lst
