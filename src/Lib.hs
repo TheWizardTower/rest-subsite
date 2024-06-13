@@ -99,16 +99,16 @@ postRestCreateR = do
         [Only i] -> toJSON $ CreateTodoResponse{createdTid = i}
         _ -> toJSON $ FailedToCreateTodo{createReq = myVal}
 
-resToTodo :: (Text, Text, Bool, Int) -> Todo
+resToTodo :: (Text, Text, Bool, Int) -> TodosStruct
 resToTodo (title, des, done, tid) =
   TodosStruct
-  { todosTitle = title
+  { todoTitle = title
   , todoDescription = des
   , todoDone = done
   , todoId = tid
   }
 
-resListToTodo :: [(Text, Text, Bool, Int)] -> Todo
+resListToTodo :: [(Text, Text, Bool, Int)] -> [TodosStruct]
 resListToTodo lst = fmap resToTodo lst
 
 getReadAllTodosR :: Handler Value
