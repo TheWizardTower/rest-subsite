@@ -99,13 +99,25 @@ postRestCreateR = do
         [Only i] -> toJSON $ CreateTodoResponse{createdTid = i}
         _ -> toJSON $ FailedToCreateTodo{createReq = myVal}
 
+resToTodo :: (Text, Text, Bool, Int) -> Todo
+resToTodo (title, des, done, tid) =
+  TodosStruct
+  { todosTitle = title
+  , todoDescription = des
+  , todoDone = done
+  , todoId = tid
+  }
+
+resListToTodo :: [(Text, Text, Bool, Int)] -> Todo
+resListToTodo lst = fmap resToTodo lst
+
 getReadAllTodosR :: Handler Value
 getReadAllTodosR = do
     conn <- head <$> getsYesod connPool
     res :: [(Text, Text, Bool, Int)] <-
         liftIO $
             query_ conn "SELECT title, description, done, id FROM todos"
-    let resTodos = fmap (\(title, des, done, tid) -> TodosStruct{todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    let resTodos = resListToTodo res
     return $ toJSON resTodos
 
 {- | Run the server we've described above. This is called from main.
@@ -122,7 +134,7 @@ getTodoR tid = do
                 conn
                 "SELECT title, description, done, id FROM todos WHERE id = ?"
                 (Only tid)
-    let resTodo = fmap (\(title, des, done, tid) -> TodosStruct{todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    let resTodo = resListToTodo res
     return $ case resTodo of
         [] -> toJSON TodoNotFound{missingTid = tid}
         [tds] -> toJSON tds
