@@ -30,9 +30,10 @@ module Lib (
 
 import Control.Monad (join)
 import Data.Aeson (FromJSON, ToJSON, Value, toJSON)
+import Data.Int (Int64)
 import Data.List.NonEmpty (NonEmpty, head, singleton)
 import Data.Text (Text, unpack)
-import Database.PostgreSQL.Simple (Connection, Only (..), connectPostgreSQL, query, query_)
+import Database.PostgreSQL.Simple (Connection, Only (..), connectPostgreSQL, execute, query, query_)
 import Database.PostgreSQL.Simple.FromField
 import GHC.Generics
 import GHC.Num.Integer (integerFromInt, integerToInt)
@@ -95,7 +96,7 @@ postRestCreateR = do
                 (ctrTitle myVal, ctrDescription myVal, False)
 
     return $ case res of
-        [Only i] -> toJSON $ CreateTodoResponse{ctrTid = i}
+        [Only i] -> toJSON $ CreateTodoResponse{createdTid = i}
         _ -> toJSON $ FailedToCreateTodo{createReq = myVal}
 
 getReadAllTodosR :: Handler Value
@@ -104,7 +105,7 @@ getReadAllTodosR = do
     res :: [(Text, Text, Bool, Int)] <-
         liftIO $
             query_ conn "SELECT title, description, done, id FROM todos"
-    let resTodos = fmap (\(title, des, done, tid) -> TodosStruct {todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    let resTodos = fmap (\(title, des, done, tid) -> TodosStruct{todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
     return $ toJSON resTodos
 
 {- | Run the server we've described above. This is called from main.
@@ -121,9 +122,9 @@ getTodoR tid = do
                 conn
                 "SELECT title, description, done, id FROM todos WHERE id = ?"
                 (Only tid)
-    let resTodo = fmap (\(title, des, done, tid) -> TodosStruct {todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
+    let resTodo = fmap (\(title, des, done, tid) -> TodosStruct{todoTitle = title, todoDescription = des, todoDone = done, todoId = tid}) res
     return $ case resTodo of
-        [] -> toJSON TodoNotFound{tnfTid = tid}
+        [] -> toJSON TodoNotFound{missingTid = tid}
         [tds] -> toJSON tds
         -- We somehow found multiple matching todos, which should be
         -- impossible in our schema? Abort because reality has
@@ -134,30 +135,30 @@ putUpdateTodoR :: Int -> Handler Value
 putUpdateTodoR tid = do
     utr :: UpdateTodoRequest <- requireCheckJsonBody
     conn <- head <$> getsYesod connPool
-    res :: [Only Integer] <-
+    res :: Int64 <-
         liftIO $
-            query
+            execute
                 conn
-                "UPDATE todos SET title = COALESCE(?, title), description = COALESCE(?, description), done = COALESCE(?, done) where ID = ? RETURNING id"
+                "UPDATE todos SET title = COALESCE(?, title), description = COALESCE(?, description), done = COALESCE(?, done) where ID = ?"
                 (utrTitle utr, utrDescription utr, utrFinished utr, integerFromInt tid)
     return $ case res of
-        [] -> toJSON $ TodoNotFound{tnfTid = tid}
-        [tid'] -> toJSON $ UpdateTodoResponse{utrTid = integerToInt $ fromOnly tid'}
+        0 -> toJSON $ TodoNotFound{missingTid = tid}
+        1 -> toJSON $ UpdateTodoResponse{updatedTid = tid}
         -- Again, bail if we updated more than one todo, somehow.
         _ -> toJSON $ MultipleTodosFound{mtfTid = tid}
 
 deleteDelTodoR :: Int -> Handler Value
 deleteDelTodoR tid = do
     conn <- head <$> getsYesod connPool
-    res :: [Only Int] <-
+    res :: Int64 <-
         liftIO
-            $ query
+            $ execute
                 conn
-                "DELETE FROM todos where ID = ? RETURNING id"
+                "DELETE FROM todos where ID = ?"
             $ Only tid
     return $ case res of
-        [] -> toJSON $ TodoNotFound{tnfTid = tid}
-        [tid'] -> toJSON $ DeleteTodoResponse{dtrTid = fromOnly tid'}
+        0 -> toJSON $ TodoNotFound{missingTid = tid}
+        1 -> toJSON $ DeleteTodoResponse{deletedTid = tid}
         -- Again, bail if we updated more than one todo, somehow.
         _ -> toJSON $ MultipleTodosFound{mtfTid = tid}
 

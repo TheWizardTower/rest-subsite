@@ -51,16 +51,16 @@ instance ToJSON CreateTodoRequest where
  refer to when they want to refer to or update the todo later.
 -}
 data CreateTodoResponse = CreateTodoResponse
-    { ctrTid :: Int
+    { createdTid :: Int
     -- ^ ID of the todo that was created.
     }
     deriving (Eq, Ord, Show)
 
 instance FromJSON CreateTodoResponse where
-    parseJSON (Object v) = CreateTodoResponse <$> v .: "tid"
+    parseJSON (Object v) = CreateTodoResponse <$> v .: "createdTid"
 
 instance ToJSON CreateTodoResponse where
-    toJSON (CreateTodoResponse ctrTid) = object ["tid" .= ctrTid]
+    toJSON (CreateTodoResponse ctrTid) = object ["createdTid" .= ctrTid]
 
 {- | If the create request fails, return the request that failed. Don't
  expose the internal error, as that's a security vulnerability. But, we
@@ -105,16 +105,16 @@ instance ToJSON TodosStruct where
 update, or delete a todo ID that cannot be found.
 -}
 data TodoNotFound = TodoNotFound
-    { tnfTid :: Int
+    { missingTid :: Int
     -- ^ The TID that we could not find in our data store.
     }
     deriving (Eq, Ord, Show)
 
 instance FromJSON TodoNotFound where
-    parseJSON (Object v) = TodoNotFound <$> v .: "tid"
+    parseJSON (Object v) = TodoNotFound <$> v .: "missing_tid"
 
 instance ToJSON TodoNotFound where
-    toJSON (TodoNotFound tid) = object ["tid" .= tid]
+    toJSON (TodoNotFound tid) = object ["missing_tid" .= tid]
 
 {- | We return this type if we run afoul of the invariant that each
 todo has a unique ID. This really only exists to handle a circumstance
@@ -127,10 +127,10 @@ data MultipleTodosFound = MultipleTodosFound
     deriving (Eq, Ord, Show)
 
 instance FromJSON MultipleTodosFound where
-    parseJSON (Object v) = MultipleTodosFound <$> v .: "tid"
+    parseJSON (Object v) = MultipleTodosFound <$> v .: "multiple_tids_found"
 
 instance ToJSON MultipleTodosFound where
-    toJSON (MultipleTodosFound mTid) = object ["tid" .= mTid]
+    toJSON (MultipleTodosFound mTid) = object ["multiple_tids_found" .= mTid]
 
 {- | An update request. If a field is Nothing, then it will be
 unchanged in the request. Note that this allows for a "no-op" update,
@@ -157,29 +157,29 @@ instance ToJSON UpdateTodoRequest where
 updating a todo entry.
 -}
 data UpdateTodoResponse = UpdateTodoResponse
-    { utrTid :: Int
+    { updatedTid :: Int
     -- ^ Update was successful, return TID update was performed on
     }
     deriving (Eq, Ord, Show)
 
 instance FromJSON UpdateTodoResponse where
-    parseJSON (Object v) = UpdateTodoResponse <$> v .: "tid"
+    parseJSON (Object v) = UpdateTodoResponse <$> v .: "updated_tid"
 
 instance ToJSON UpdateTodoResponse where
-    toJSON (UpdateTodoResponse uTid) = object ["tid" .= uTid]
+    toJSON (UpdateTodoResponse uTid) = object ["updated_tid" .= uTid]
 
 {- | The response returned -- as a JSON object -- on successfully
 deleting a todo entry. Hopefully one we've finished, rather than
 abandoned.
 -}
 data DeleteTodoResponse = DeleteTodoResponse
-    { dtrTid :: Int
+    { deletedTid :: Int
     -- ^ Update was successful, return TID update was performed on
     }
     deriving (Eq, Ord, Show)
 
 instance FromJSON DeleteTodoResponse where
-    parseJSON (Object v) = DeleteTodoResponse <$> v .: "tid"
+    parseJSON (Object v) = DeleteTodoResponse <$> v .: "deleted_tid"
 
 instance ToJSON DeleteTodoResponse where
-    toJSON (DeleteTodoResponse dTid) = object ["tid" .= dTid]
+    toJSON (DeleteTodoResponse dTid) = object ["deleted_tid" .= dTid]
